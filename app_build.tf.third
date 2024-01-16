@@ -1,0 +1,1238 @@
+# Depolyment of the application
+
+resource "kubernetes_manifest" "deployment_makeline_service" {
+  manifest = {
+    "apiVersion" = "apps/v1"
+    "kind" = "Deployment"
+    "metadata" = {
+      "annotations" = {
+        "deployment.kubernetes.io/revision" = "1"
+      }
+      "name" = "makeline-service"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "progressDeadlineSeconds" = 600
+      "replicas" = 1
+      "revisionHistoryLimit" = 10
+      "selector" = {
+        "matchLabels" = {
+          "app" = "makeline-service"
+        }
+      }
+      "strategy" = {
+        "rollingUpdate" = {
+          "maxSurge" = "25%"
+          "maxUnavailable" = "25%"
+        }
+        "type" = "RollingUpdate"
+      }
+      "template" = {
+        "metadata" = {
+          "creationTimestamp" = null
+          "labels" = {
+            "app" = "makeline-service"
+          }
+        }
+        "spec" = {
+          "containers" = [
+            {
+              "env" = [
+                {
+                  "name" = "ORDER_QUEUE_URI"
+                  "value" = "amqp://rabbitmq:5672"
+                },
+                {
+                  "name" = "ORDER_QUEUE_USERNAME"
+                  "value" = "username"
+                },
+                {
+                  "name" = "ORDER_QUEUE_PASSWORD"
+                  "value" = "password"
+                },
+                {
+                  "name" = "ORDER_QUEUE_NAME"
+                  "value" = "orders"
+                },
+                {
+                  "name" = "ORDER_DB_URI"
+                  "value" = "mongodb://mongodb:27017"
+                },
+                {
+                  "name" = "ORDER_DB_NAME"
+                  "value" = "orderdb"
+                },
+                {
+                  "name" = "ORDER_DB_COLLECTION_NAME"
+                  "value" = "orders"
+                },
+              ]
+              "image" = "ghcr.io/azure-samples/aks-store-demo/makeline-service:latest"
+              "imagePullPolicy" = "Always"
+              "livenessProbe" = {
+                "failureThreshold" = 5
+                "httpGet" = {
+                  "path" = "/health"
+                  "port" = 3001
+                  "scheme" = "HTTP"
+                }
+                "initialDelaySeconds" = 3
+                "periodSeconds" = 3
+                "successThreshold" = 1
+                "timeoutSeconds" = 1
+              }
+              "name" = "makeline-service"
+              "ports" = [
+                {
+                  "containerPort" = 3001
+                  "protocol" = "TCP"
+                },
+              ]
+              "readinessProbe" = {
+                "failureThreshold" = 3
+                "httpGet" = {
+                  "path" = "/health"
+                  "port" = 3001
+                  "scheme" = "HTTP"
+                }
+                "initialDelaySeconds" = 3
+                "periodSeconds" = 5
+                "successThreshold" = 1
+                "timeoutSeconds" = 1
+              }
+              "resources" = {
+                "limits" = {
+                  "cpu" = "5m"
+                  "memory" = "20Mi"
+                }
+                "requests" = {
+                  "cpu" = "1m"
+                  "memory" = "6Mi"
+                }
+              }
+              "terminationMessagePath" = "/dev/termination-log"
+              "terminationMessagePolicy" = "File"
+            },
+          ]
+          "dnsPolicy" = "ClusterFirst"
+          "nodeSelector" = {
+            "kubernetes.io/os" = "linux"
+          }
+          "restartPolicy" = "Always"
+          "schedulerName" = "default-scheduler"
+          "securityContext" = {}
+          "terminationGracePeriodSeconds" = 30
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_manifest" "deployment_order_service" {
+  manifest = {
+    "apiVersion" = "apps/v1"
+    "kind" = "Deployment"
+    "metadata" = {
+      "annotations" = {
+        "deployment.kubernetes.io/revision" = "1"
+      }
+      "name" = "order-service"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "progressDeadlineSeconds" = 600
+      "replicas" = 1
+      "revisionHistoryLimit" = 10
+      "selector" = {
+        "matchLabels" = {
+          "app" = "order-service"
+        }
+      }
+      "strategy" = {
+        "rollingUpdate" = {
+          "maxSurge" = "25%"
+          "maxUnavailable" = "25%"
+        }
+        "type" = "RollingUpdate"
+      }
+      "template" = {
+        "metadata" = {
+          "creationTimestamp" = null
+          "labels" = {
+            "app" = "order-service"
+          }
+        }
+        "spec" = {
+          "containers" = [
+            {
+              "env" = [
+                {
+                  "name" = "ORDER_QUEUE_HOSTNAME"
+                  "value" = "rabbitmq"
+                },
+                {
+                  "name" = "ORDER_QUEUE_PORT"
+                  "value" = "5672"
+                },
+                {
+                  "name" = "ORDER_QUEUE_USERNAME"
+                  "value" = "username"
+                },
+                {
+                  "name" = "ORDER_QUEUE_PASSWORD"
+                  "value" = "password"
+                },
+                {
+                  "name" = "ORDER_QUEUE_NAME"
+                  "value" = "orders"
+                },
+                {
+                  "name" = "FASTIFY_ADDRESS"
+                  "value" = "0.0.0.0"
+                },
+              ]
+              "image" = "ghcr.io/azure-samples/aks-store-demo/order-service:latest"
+              "imagePullPolicy" = "Always"
+              "livenessProbe" = {
+                "failureThreshold" = 5
+                "httpGet" = {
+                  "path" = "/health"
+                  "port" = 3000
+                  "scheme" = "HTTP"
+                }
+                "initialDelaySeconds" = 3
+                "periodSeconds" = 3
+                "successThreshold" = 1
+                "timeoutSeconds" = 1
+              }
+              "name" = "order-service"
+              "ports" = [
+                {
+                  "containerPort" = 3000
+                  "protocol" = "TCP"
+                },
+              ]
+              "readinessProbe" = {
+                "failureThreshold" = 3
+                "httpGet" = {
+                  "path" = "/health"
+                  "port" = 3000
+                  "scheme" = "HTTP"
+                }
+                "initialDelaySeconds" = 3
+                "periodSeconds" = 5
+                "successThreshold" = 1
+                "timeoutSeconds" = 1
+              }
+              "resources" = {
+                "limits" = {
+                  "cpu" = "75m"
+                  "memory" = "128Mi"
+                }
+                "requests" = {
+                  "cpu" = "1m"
+                  "memory" = "50Mi"
+                }
+              }
+              "startupProbe" = {
+                "failureThreshold" = 3
+                "httpGet" = {
+                  "path" = "/health"
+                  "port" = 3000
+                  "scheme" = "HTTP"
+                }
+                "initialDelaySeconds" = 15
+                "periodSeconds" = 5
+                "successThreshold" = 1
+                "timeoutSeconds" = 1
+              }
+              "terminationMessagePath" = "/dev/termination-log"
+              "terminationMessagePolicy" = "File"
+            },
+          ]
+          "dnsPolicy" = "ClusterFirst"
+          "initContainers" = [
+            {
+              "command" = [
+                "sh",
+                "-c",
+                "until nc -zv rabbitmq 5672; do echo waiting for rabbitmq; sleep 2; done;",
+              ]
+              "image" = "busybox"
+              "imagePullPolicy" = "Always"
+              "name" = "wait-for-rabbitmq"
+              "resources" = {
+                "limits" = {
+                  "cpu" = "75m"
+                  "memory" = "128Mi"
+                }
+                "requests" = {
+                  "cpu" = "1m"
+                  "memory" = "50Mi"
+                }
+              }
+              "terminationMessagePath" = "/dev/termination-log"
+              "terminationMessagePolicy" = "File"
+            },
+          ]
+          "nodeSelector" = {
+            "kubernetes.io/os" = "linux"
+          }
+          "restartPolicy" = "Always"
+          "schedulerName" = "default-scheduler"
+          "securityContext" = {}
+          "terminationGracePeriodSeconds" = 30
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_manifest" "deployment_product_service" {
+  manifest = {
+    "apiVersion" = "apps/v1"
+    "kind" = "Deployment"
+    "metadata" = {
+      "annotations" = {
+        "deployment.kubernetes.io/revision" = "1"
+      }
+      "name" = "product-service"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "progressDeadlineSeconds" = 600
+      "replicas" = 1
+      "revisionHistoryLimit" = 10
+      "selector" = {
+        "matchLabels" = {
+          "app" = "product-service"
+        }
+      }
+      "strategy" = {
+        "rollingUpdate" = {
+          "maxSurge" = "25%"
+          "maxUnavailable" = "25%"
+        }
+        "type" = "RollingUpdate"
+      }
+      "template" = {
+        "metadata" = {
+          "creationTimestamp" = null
+          "labels" = {
+            "app" = "product-service"
+          }
+        }
+        "spec" = {
+          "containers" = [
+            {
+              "image" = "ghcr.io/azure-samples/aks-store-demo/product-service:latest"
+              "imagePullPolicy" = "Always"
+              "livenessProbe" = {
+                "failureThreshold" = 5
+                "httpGet" = {
+                  "path" = "/health"
+                  "port" = 3002
+                  "scheme" = "HTTP"
+                }
+                "initialDelaySeconds" = 3
+                "periodSeconds" = 3
+                "successThreshold" = 1
+                "timeoutSeconds" = 1
+              }
+              "name" = "product-service"
+              "ports" = [
+                {
+                  "containerPort" = 3002
+                  "protocol" = "TCP"
+                },
+              ]
+              "readinessProbe" = {
+                "failureThreshold" = 3
+                "httpGet" = {
+                  "path" = "/health"
+                  "port" = 3002
+                  "scheme" = "HTTP"
+                }
+                "initialDelaySeconds" = 3
+                "periodSeconds" = 5
+                "successThreshold" = 1
+                "timeoutSeconds" = 1
+              }
+              "resources" = {
+                "limits" = {
+                  "cpu" = "1m"
+                  "memory" = "7Mi"
+                }
+                "requests" = {
+                  "cpu" = "1m"
+                  "memory" = "1Mi"
+                }
+              }
+              "terminationMessagePath" = "/dev/termination-log"
+              "terminationMessagePolicy" = "File"
+            },
+          ]
+          "dnsPolicy" = "ClusterFirst"
+          "nodeSelector" = {
+            "kubernetes.io/os" = "linux"
+          }
+          "restartPolicy" = "Always"
+          "schedulerName" = "default-scheduler"
+          "securityContext" = {}
+          "terminationGracePeriodSeconds" = 30
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_manifest" "deployment_store_admin" {
+  manifest = {
+    "apiVersion" = "apps/v1"
+    "kind" = "Deployment"
+    "metadata" = {
+      "annotations" = {
+        "deployment.kubernetes.io/revision" = "1"
+      }
+      "name" = "store-admin"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "progressDeadlineSeconds" = 600
+      "replicas" = 1
+      "revisionHistoryLimit" = 10
+      "selector" = {
+        "matchLabels" = {
+          "app" = "store-admin"
+        }
+      }
+      "strategy" = {
+        "rollingUpdate" = {
+          "maxSurge" = "25%"
+          "maxUnavailable" = "25%"
+        }
+        "type" = "RollingUpdate"
+      }
+      "template" = {
+        "metadata" = {
+          "creationTimestamp" = null
+          "labels" = {
+            "app" = "store-admin"
+          }
+        }
+        "spec" = {
+          "containers" = [
+            {
+              "env" = [
+                {
+                  "name" = "VUE_APP_PRODUCT_SERVICE_URL"
+                  "value" = "http://product-service:3002/"
+                },
+                {
+                  "name" = "VUE_APP_MAKELINE_SERVICE_URL"
+                  "value" = "http://makeline-service:3001/"
+                },
+                {
+                  "name" = "VUE_APP_AI_SERVICE_URL"
+                  "value" = "http://ai-service:5001/"
+                },
+              ]
+              "image" = "ghcr.io/azure-samples/aks-store-demo/store-admin:latest"
+              "imagePullPolicy" = "Always"
+              "livenessProbe" = {
+                "failureThreshold" = 5
+                "httpGet" = {
+                  "path" = "/health"
+                  "port" = 8081
+                  "scheme" = "HTTP"
+                }
+                "initialDelaySeconds" = 3
+                "periodSeconds" = 3
+                "successThreshold" = 1
+                "timeoutSeconds" = 1
+              }
+              "name" = "store-admin"
+              "ports" = [
+                {
+                  "containerPort" = 8081
+                  "name" = "store-admin"
+                  "protocol" = "TCP"
+                },
+              ]
+              "readinessProbe" = {
+                "failureThreshold" = 3
+                "httpGet" = {
+                  "path" = "/health"
+                  "port" = 8081
+                  "scheme" = "HTTP"
+                }
+                "initialDelaySeconds" = 3
+                "periodSeconds" = 5
+                "successThreshold" = 1
+                "timeoutSeconds" = 1
+              }
+              "resources" = {
+                "limits" = {
+                  "cpu" = "1"
+                  "memory" = "512Mi"
+                }
+                "requests" = {
+                  "cpu" = "1m"
+                  "memory" = "200Mi"
+                }
+              }
+              "startupProbe" = {
+                "failureThreshold" = 3
+                "httpGet" = {
+                  "path" = "/health"
+                  "port" = 8081
+                  "scheme" = "HTTP"
+                }
+                "initialDelaySeconds" = 15
+                "periodSeconds" = 5
+                "successThreshold" = 1
+                "timeoutSeconds" = 1
+              }
+              "terminationMessagePath" = "/dev/termination-log"
+              "terminationMessagePolicy" = "File"
+            },
+          ]
+          "dnsPolicy" = "ClusterFirst"
+          "nodeSelector" = {
+            "kubernetes.io/os" = "linux"
+          }
+          "restartPolicy" = "Always"
+          "schedulerName" = "default-scheduler"
+          "securityContext" = {}
+          "terminationGracePeriodSeconds" = 30
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_manifest" "deployment_store_front" {
+  manifest = {
+    "apiVersion" = "apps/v1"
+    "kind" = "Deployment"
+    "metadata" = {
+      "annotations" = {
+        "deployment.kubernetes.io/revision" = "1"
+      }
+      "name" = "store-front"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "progressDeadlineSeconds" = 600
+      "replicas" = 1
+      "revisionHistoryLimit" = 10
+      "selector" = {
+        "matchLabels" = {
+          "app" = "store-front"
+        }
+      }
+      "strategy" = {
+        "rollingUpdate" = {
+          "maxSurge" = "25%"
+          "maxUnavailable" = "25%"
+        }
+        "type" = "RollingUpdate"
+      }
+      "template" = {
+        "metadata" = {
+          "creationTimestamp" = null
+          "labels" = {
+            "app" = "store-front"
+          }
+        }
+        "spec" = {
+          "containers" = [
+            {
+              "env" = [
+                {
+                  "name" = "VUE_APP_ORDER_SERVICE_URL"
+                  "value" = "http://order-service:3000/"
+                },
+                {
+                  "name" = "VUE_APP_PRODUCT_SERVICE_URL"
+                  "value" = "http://product-service:3002/"
+                },
+              ]
+              "image" = "ghcr.io/azure-samples/aks-store-demo/store-front:latest"
+              "imagePullPolicy" = "Always"
+              "livenessProbe" = {
+                "failureThreshold" = 5
+                "httpGet" = {
+                  "path" = "/health"
+                  "port" = 8080
+                  "scheme" = "HTTP"
+                }
+                "initialDelaySeconds" = 3
+                "periodSeconds" = 3
+                "successThreshold" = 1
+                "timeoutSeconds" = 1
+              }
+              "name" = "store-front"
+              "ports" = [
+                {
+                  "containerPort" = 8080
+                  "name" = "store-front"
+                  "protocol" = "TCP"
+                },
+              ]
+              "readinessProbe" = {
+                "failureThreshold" = 3
+                "httpGet" = {
+                  "path" = "/health"
+                  "port" = 8080
+                  "scheme" = "HTTP"
+                }
+                "initialDelaySeconds" = 3
+                "periodSeconds" = 3
+                "successThreshold" = 1
+                "timeoutSeconds" = 1
+              }
+              "resources" = {
+                "limits" = {
+                  "cpu" = "1"
+                  "memory" = "512Mi"
+                }
+                "requests" = {
+                  "cpu" = "1m"
+                  "memory" = "200Mi"
+                }
+              }
+              "startupProbe" = {
+                "failureThreshold" = 3
+                "httpGet" = {
+                  "path" = "/health"
+                  "port" = 8080
+                  "scheme" = "HTTP"
+                }
+                "initialDelaySeconds" = 15
+                "periodSeconds" = 5
+                "successThreshold" = 1
+                "timeoutSeconds" = 1
+              }
+              "terminationMessagePath" = "/dev/termination-log"
+              "terminationMessagePolicy" = "File"
+            },
+          ]
+          "dnsPolicy" = "ClusterFirst"
+          "nodeSelector" = {
+            "kubernetes.io/os" = "linux"
+          }
+          "restartPolicy" = "Always"
+          "schedulerName" = "default-scheduler"
+          "securityContext" = {}
+          "terminationGracePeriodSeconds" = 30
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_manifest" "deployment_virtual_customer" {
+  manifest = {
+    "apiVersion" = "apps/v1"
+    "kind" = "Deployment"
+    "metadata" = {
+      "annotations" = {
+        "deployment.kubernetes.io/revision" = "1"
+      }
+      "name" = "virtual-customer"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "progressDeadlineSeconds" = 600
+      "replicas" = 1
+      "revisionHistoryLimit" = 10
+      "selector" = {
+        "matchLabels" = {
+          "app" = "virtual-customer"
+        }
+      }
+      "strategy" = {
+        "rollingUpdate" = {
+          "maxSurge" = "25%"
+          "maxUnavailable" = "25%"
+        }
+        "type" = "RollingUpdate"
+      }
+      "template" = {
+        "metadata" = {
+          "creationTimestamp" = null
+          "labels" = {
+            "app" = "virtual-customer"
+          }
+        }
+        "spec" = {
+          "containers" = [
+            {
+              "env" = [
+                {
+                  "name" = "ORDER_SERVICE_URL"
+                  "value" = "http://order-service:3000/"
+                },
+                {
+                  "name" = "ORDERS_PER_HOUR"
+                  "value" = "100"
+                },
+              ]
+              "image" = "ghcr.io/azure-samples/aks-store-demo/virtual-customer:latest"
+              "imagePullPolicy" = "Always"
+              "name" = "virtual-customer"
+              "resources" = {
+                "limits" = {
+                  "cpu" = "1m"
+                  "memory" = "7Mi"
+                }
+                "requests" = {
+                  "cpu" = "1m"
+                  "memory" = "1Mi"
+                }
+              }
+              "terminationMessagePath" = "/dev/termination-log"
+              "terminationMessagePolicy" = "File"
+            },
+          ]
+          "dnsPolicy" = "ClusterFirst"
+          "nodeSelector" = {
+            "kubernetes.io/os" = "linux"
+          }
+          "restartPolicy" = "Always"
+          "schedulerName" = "default-scheduler"
+          "securityContext" = {}
+          "terminationGracePeriodSeconds" = 30
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_manifest" "deployment_virtual_worker" {
+  manifest = {
+    "apiVersion" = "apps/v1"
+    "kind" = "Deployment"
+    "metadata" = {
+      "annotations" = {
+        "deployment.kubernetes.io/revision" = "1"
+      }
+      "name" = "virtual-worker"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "progressDeadlineSeconds" = 600
+      "replicas" = 1
+      "revisionHistoryLimit" = 10
+      "selector" = {
+        "matchLabels" = {
+          "app" = "virtual-worker"
+        }
+      }
+      "strategy" = {
+        "rollingUpdate" = {
+          "maxSurge" = "25%"
+          "maxUnavailable" = "25%"
+        }
+        "type" = "RollingUpdate"
+      }
+      "template" = {
+        "metadata" = {
+          "creationTimestamp" = null
+          "labels" = {
+            "app" = "virtual-worker"
+          }
+        }
+        "spec" = {
+          "containers" = [
+            {
+              "env" = [
+                {
+                  "name" = "MAKELINE_SERVICE_URL"
+                  "value" = "http://makeline-service:3001"
+                },
+                {
+                  "name" = "ORDERS_PER_HOUR"
+                  "value" = "100"
+                },
+              ]
+              "image" = "ghcr.io/azure-samples/aks-store-demo/virtual-worker:latest"
+              "imagePullPolicy" = "Always"
+              "name" = "virtual-worker"
+              "resources" = {
+                "limits" = {
+                  "cpu" = "1m"
+                  "memory" = "7Mi"
+                }
+                "requests" = {
+                  "cpu" = "1m"
+                  "memory" = "1Mi"
+                }
+              }
+              "terminationMessagePath" = "/dev/termination-log"
+              "terminationMessagePolicy" = "File"
+            },
+          ]
+          "dnsPolicy" = "ClusterFirst"
+          "nodeSelector" = {
+            "kubernetes.io/os" = "linux"
+          }
+          "restartPolicy" = "Always"
+          "schedulerName" = "default-scheduler"
+          "securityContext" = {}
+          "terminationGracePeriodSeconds" = 30
+        }
+      }
+    }
+  }
+}
+
+# Create Service to access the deployment
+
+resource "kubernetes_manifest" "service_makeline_service" {
+  manifest = {
+    "apiVersion" = "v1"
+    "kind" = "Service"
+    "metadata" = {
+      "name" = "makeline-service"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "clusterIP" = "10.0.40.79"
+      "clusterIPs" = [
+        "10.0.40.79",
+      ]
+      "internalTrafficPolicy" = "Cluster"
+      "ipFamilies" = [
+        "IPv4",
+      ]
+      "ipFamilyPolicy" = "SingleStack"
+      "ports" = [
+        {
+          "name" = "http"
+          "port" = 3001
+          "protocol" = "TCP"
+          "targetPort" = 3001
+        },
+      ]
+      "selector" = {
+        "app" = "makeline-service"
+      }
+      "sessionAffinity" = "None"
+      "type" = "ClusterIP"
+    }
+  }
+}
+
+resource "kubernetes_manifest" "service_mongodb" {
+  manifest = {
+    "apiVersion" = "v1"
+    "kind" = "Service"
+    "metadata" = {
+      "name" = "mongodb"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "clusterIP" = "10.0.52.32"
+      "clusterIPs" = [
+        "10.0.52.32",
+      ]
+      "internalTrafficPolicy" = "Cluster"
+      "ipFamilies" = [
+        "IPv4",
+      ]
+      "ipFamilyPolicy" = "SingleStack"
+      "ports" = [
+        {
+          "port" = 27017
+          "protocol" = "TCP"
+          "targetPort" = 27017
+        },
+      ]
+      "selector" = {
+        "app" = "mongodb"
+      }
+      "sessionAffinity" = "None"
+      "type" = "ClusterIP"
+    }
+  }
+}
+
+resource "kubernetes_manifest" "service_order_service" {
+  manifest = {
+    "apiVersion" = "v1"
+    "kind" = "Service"
+    "metadata" = {
+      "name" = "order-service"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "clusterIP" = "10.0.130.203"
+      "clusterIPs" = [
+        "10.0.130.203",
+      ]
+      "internalTrafficPolicy" = "Cluster"
+      "ipFamilies" = [
+        "IPv4",
+      ]
+      "ipFamilyPolicy" = "SingleStack"
+      "ports" = [
+        {
+          "name" = "http"
+          "port" = 3000
+          "protocol" = "TCP"
+          "targetPort" = 3000
+        },
+      ]
+      "selector" = {
+        "app" = "order-service"
+      }
+      "sessionAffinity" = "None"
+      "type" = "ClusterIP"
+    }
+  }
+}
+
+resource "kubernetes_manifest" "service_product_service" {
+  manifest = {
+    "apiVersion" = "v1"
+    "kind" = "Service"
+    "metadata" = {
+      "name" = "product-service"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "clusterIP" = "10.0.59.127"
+      "clusterIPs" = [
+        "10.0.59.127",
+      ]
+      "internalTrafficPolicy" = "Cluster"
+      "ipFamilies" = [
+        "IPv4",
+      ]
+      "ipFamilyPolicy" = "SingleStack"
+      "ports" = [
+        {
+          "name" = "http"
+          "port" = 3002
+          "protocol" = "TCP"
+          "targetPort" = 3002
+        },
+      ]
+      "selector" = {
+        "app" = "product-service"
+      }
+      "sessionAffinity" = "None"
+      "type" = "ClusterIP"
+    }
+  }
+}
+
+resource "kubernetes_manifest" "service_rabbitmq" {
+  manifest = {
+    "apiVersion" = "v1"
+    "kind" = "Service"
+    "metadata" = {
+      "name" = "rabbitmq"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "clusterIP" = "10.0.122.75"
+      "clusterIPs" = [
+        "10.0.122.75",
+      ]
+      "internalTrafficPolicy" = "Cluster"
+      "ipFamilies" = [
+        "IPv4",
+      ]
+      "ipFamilyPolicy" = "SingleStack"
+      "ports" = [
+        {
+          "name" = "rabbitmq-amqp"
+          "port" = 5672
+          "protocol" = "TCP"
+          "targetPort" = 5672
+        },
+        {
+          "name" = "rabbitmq-http"
+          "port" = 15672
+          "protocol" = "TCP"
+          "targetPort" = 15672
+        },
+      ]
+      "selector" = {
+        "app" = "rabbitmq"
+      }
+      "sessionAffinity" = "None"
+      "type" = "ClusterIP"
+    }
+  }
+}
+
+resource "kubernetes_manifest" "service_store_admin" {
+  manifest = {
+    "apiVersion" = "v1"
+    "kind" = "Service"
+    "metadata" = {
+      "name" = "store-admin"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "allocateLoadBalancerNodePorts" = true
+      "clusterIP" = "10.0.131.76"
+      "clusterIPs" = [
+        "10.0.131.76",
+      ]
+      "externalTrafficPolicy" = "Cluster"
+      "internalTrafficPolicy" = "Cluster"
+      "ipFamilies" = [
+        "IPv4",
+      ]
+      "ipFamilyPolicy" = "SingleStack"
+      "ports" = [
+        {
+          "nodePort" = 30683
+          "port" = 80
+          "protocol" = "TCP"
+          "targetPort" = 8081
+        },
+      ]
+      "selector" = {
+        "app" = "store-admin"
+      }
+      "sessionAffinity" = "None"
+      "type" = "LoadBalancer"
+    }
+  }
+}
+
+resource "kubernetes_manifest" "service_store_front" {
+  manifest = {
+    "apiVersion" = "v1"
+    "kind" = "Service"
+    "metadata" = {
+      "name" = "store-front"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "allocateLoadBalancerNodePorts" = true
+      "clusterIP" = "10.0.214.72"
+      "clusterIPs" = [
+        "10.0.214.72",
+      ]
+      "externalTrafficPolicy" = "Cluster"
+      "internalTrafficPolicy" = "Cluster"
+      "ipFamilies" = [
+        "IPv4",
+      ]
+      "ipFamilyPolicy" = "SingleStack"
+      "ports" = [
+        {
+          "nodePort" = 32462
+          "port" = 80
+          "protocol" = "TCP"
+          "targetPort" = 8080
+        },
+      ]
+      "selector" = {
+        "app" = "store-front"
+      }
+      "sessionAffinity" = "None"
+      "type" = "LoadBalancer"
+    }
+  }
+}
+resource "kubernetes_manifest" "service_tls_admin" {
+  manifest = {
+    "apiVersion" = "v1"
+    "kind" = "Service"
+    "metadata" = {
+      "name" = "tls-admin"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "clusterIP" = "10.0.160.208"
+      "clusterIPs" = [
+        "10.0.160.208",
+      ]
+      "internalTrafficPolicy" = "Cluster"
+      "ipFamilies" = [
+        "IPv4",
+      ]
+      "ipFamilyPolicy" = "SingleStack"
+      "ports" = [
+        {
+          "name" = "tls-admin"
+          "port" = 80
+          "protocol" = "TCP"
+          "targetPort" = 8081
+        },
+      ]
+      "selector" = {
+        "app" = "store-admin"
+      }
+      "sessionAffinity" = "None"
+      "type" = "ClusterIP"
+    }
+  }
+}
+
+resource "kubernetes_manifest" "ingressroute_admin_ing" {
+  manifest = {
+    "apiVersion" = "traefik.containo.us/v1alpha1"
+    "kind" = "IngressRoute"
+    "metadata" = {
+      "name" = "admin-ing"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "entryPoints" = [
+        "websecure",
+      ]
+      "routes" = [
+        {
+          "kind" = "Rule"
+          "match" = "Host(`admin.example.com`)"
+          "services" = [
+            {
+              "name" = "tls-admin"
+              "port" = 80
+            },
+          ]
+        },
+      ]
+      "tls" = {
+        "secretName" = "example-com-tls"
+      }
+    }
+  }
+}
+# Open AI Service
+
+resource "kubernetes_manifest" "deployment_ai_service" {
+  manifest = {
+    "apiVersion" = "apps/v1"
+    "kind" = "Deployment"
+    "metadata" = {
+      "annotations" = {
+        "deployment.kubernetes.io/revision" = "1"
+      }
+      "name" = "ai-service"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "progressDeadlineSeconds" = 600
+      "replicas" = 1
+      "revisionHistoryLimit" = 10
+      "selector" = {
+        "matchLabels" = {
+          "app" = "ai-service"
+        }
+      }
+      "strategy" = {
+        "rollingUpdate" = {
+          "maxSurge" = "25%"
+          "maxUnavailable" = "25%"
+        }
+        "type" = "RollingUpdate"
+      }
+      "template" = {
+        "metadata" = {
+          "creationTimestamp" = null
+          "labels" = {
+            "app" = "ai-service"
+          }
+        }
+        "spec" = {
+          "containers" = [
+            {
+              "env" = [
+                {
+                  "name" = "USE_AZURE_OPENAI"
+                  "value" = "True"
+                },
+                {
+                  "name" = "AZURE_OPENAI_DEPLOYMENT_NAME"
+                  "value" = "${azurerm_cognitive_account.tf-ai-demo.name}"
+                },
+                {
+                  "name" = "AZURE_OPENAI_ENDPOINT"
+                  "value" = "${azurerm_cognitive_account.tf-ai-demo.endpoint}"
+                },
+                {
+                  "name" = "OPENAI_API_KEY"
+                  "value" = "${azurerm_cognitive_account.tf-ai-demo.primary_access_key}"
+                },
+              ]
+              "image" = "ghcr.io/azure-samples/aks-store-demo/ai-service:latest"
+              "imagePullPolicy" = "Always"
+              "name" = "ai-service"
+              "ports" = [
+                {
+                  "containerPort" = 5001
+                  "protocol" = "TCP"
+                },
+              ]
+              "resources" = {
+                "limits" = {
+                  "cpu" = "30m"
+                  "memory" = "85Mi"
+                }
+                "requests" = {
+                  "cpu" = "20m"
+                  "memory" = "50Mi"
+                }
+              }
+              "terminationMessagePath" = "/dev/termination-log"
+              "terminationMessagePolicy" = "File"
+            },
+          ]
+          "dnsPolicy" = "ClusterFirst"
+          "nodeSelector" = {
+            "kubernetes.io/os" = "linux"
+          }
+          "restartPolicy" = "Always"
+          "schedulerName" = "default-scheduler"
+          "securityContext" = {}
+          "terminationGracePeriodSeconds" = 30
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_manifest" "service_ai_service" {
+  manifest = {
+    "apiVersion" = "v1"
+    "kind" = "Service"
+    "metadata" = {
+      "name" = "ai-service"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "clusterIP" = "10.0.19.59"
+      "clusterIPs" = [
+        "10.0.19.59",
+      ]
+      "internalTrafficPolicy" = "Cluster"
+      "ipFamilies" = [
+        "IPv4",
+      ]
+      "ipFamilyPolicy" = "SingleStack"
+      "ports" = [
+        {
+          "name" = "http"
+          "port" = 5001
+          "protocol" = "TCP"
+          "targetPort" = 5001
+        },
+      ]
+      "selector" = {
+        "app" = "ai-service"
+      }
+      "sessionAffinity" = "None"
+      "type" = "ClusterIP"
+    }
+  }
+}

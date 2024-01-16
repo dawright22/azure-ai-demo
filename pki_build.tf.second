@@ -1,0 +1,154 @@
+data "kubernetes_service" "vault_lb_ip" {
+  metadata {
+    name = "vault-ui"
+  }
+}
+
+provider "vault" {
+  address = "http://${data.kubernetes_service.vault_lb_ip.status.0.load_balancer.0.ingress.0.ip}:8200/"
+  token = "AzureA!dem0"
+}
+
+resource "vault_mount" "pki" {
+  path        = "pki"
+  type        = "pki"
+  description = "This is a PKI mount for the Azure AI demo."
+
+  default_lease_ttl_seconds = 86400
+  max_lease_ttl_seconds     = 315360000
+}
+
+resource "vault_pki_secret_backend_root_cert" "root_2023" {
+   backend     = vault_mount.pki.path
+   type        = "internal"
+   common_name = "example.com"
+   ttl         = 315360000
+   issuer_name = "root-2023"
+}
+
+resource "vault_pki_secret_backend_issuer" "root_2023" {
+   backend                        = vault_mount.pki.path
+   issuer_ref                     = vault_pki_secret_backend_root_cert.root_2023.issuer_id
+   issuer_name                    = vault_pki_secret_backend_root_cert.root_2023.issuer_name
+   revocation_signature_algorithm = "SHA256WithRSA"
+}
+
+resource "vault_pki_secret_backend_role" "example-dot-com" {
+   backend          = vault_mount.pki.path
+   name             = "example-dot-com"
+   ttl              = 86400
+   allow_ip_sans    = true
+   key_type         = "any"
+   allowed_domains  = ["example.com", "my.domain"]
+   allow_subdomains = true
+   allow_any_name   = true
+}
+
+resource "vault_pki_secret_backend_config_urls" "config-urls" {
+   backend = vault_mount.pki.path
+   issuing_certificates    = ["http://vault.default:8200/v1/pki/ca"]
+   crl_distribution_points = ["http://vault.default:8200/v1/pki/crl"]
+}
+
+resource "vault_policy" "pki" {
+  name = "pki"
+
+  policy = <<EOF
+path "pki*" { capabilities = ["read", "list"] }
+path "pki/roles/example-dot-com"   { capabilities = ["create", "update"] }
+path "pki/sign/example-dot-com"    { capabilities = ["create", "update"] }
+path "pki/issue/example-dot-com"   { capabilities = ["create"] }
+EOF
+}
+
+resource "vault_auth_backend" "kubernetes" {
+  type = "kubernetes"
+}
+resource "vault_kubernetes_auth_backend_config" "k8_auth_config" {
+  backend           = vault_auth_backend.kubernetes.path
+  kubernetes_host   = azurerm_kubernetes_cluster.tf-ai-demo.kube_config.0.host
+}
+
+resource "vault_kubernetes_auth_backend_role" "k8_role" {
+  backend                          = vault_auth_backend.kubernetes.path
+  role_name                        = "issuer"
+  bound_service_account_names      = ["issuer"]
+  bound_service_account_namespaces = ["default","cert-manager"]
+  token_policies                   = ["default", "pki"]
+  token_ttl                        = 60
+  token_max_ttl                    = 120
+}
+
+# Path: Vault/pki.tf
+
+resource "kubernetes_manifest" "issuer_vault_issuer" {
+  manifest = {
+    "apiVersion" = "cert-manager.io/v1"
+    "kind" = "Issuer"
+    "metadata" = {
+      "name" = "vault-issuer"
+      "namespace" = "default"
+
+    }
+    "spec" = {
+      "vault" = {
+        "auth" = {
+          "kubernetes" = {
+            "mountPath" = "/v1/auth/kubernetes"
+            "role" = "issuer"
+            "secretRef" = {
+              "key" = "token"
+              "name" = "issuer-token"
+            }
+          }
+        }
+        "path" = "pki/sign/example-dot-com"
+        "server" = "http://vault.default:8200"
+      }
+    }
+  }
+}
+resource "kubernetes_manifest" "serviceaccount_issuer" {
+  manifest = {
+    "apiVersion" = "v1"
+    "kind" = "ServiceAccount"
+    "metadata" = {
+      "name" = "issuer"
+      "namespace" = "default"
+    }
+  }
+}
+
+
+resource "kubernetes_secret" "issuer-token" {
+  depends_on = [ kubernetes_manifest.serviceaccount_issuer ]
+  metadata {
+    name = "issuer-token"
+    annotations = {
+      "kubernetes.io/service-account.name" = "issuer"
+    }
+  }
+
+  type = "kubernetes.io/service-account-token"
+}
+
+resource "kubernetes_manifest" "certificate_admin_example_com" {
+  manifest = {
+    "apiVersion" = "cert-manager.io/v1"
+    "kind" = "Certificate"
+    "metadata" = {
+      "name" = "admin-example-com"
+      "namespace" = "default"
+    }
+    "spec" = {
+      "commonName" = "admin.example.com"
+      "dnsNames" = [
+        "admin.example.com",
+      ]
+      "issuerRef" = {
+        "name" = "vault-issuer"
+      }
+      "secretName" = "example-com-tls"
+    }
+  }
+}
