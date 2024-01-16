@@ -58,7 +58,6 @@ Once the deployment is complete you will see the outputs of the deployment. Then
 
 Finally, you will need to run the following command to deploy the application: Rename [Title](app_build.tf.third) to [app_build.tf] and run terraform apply again. This will deploy the application components.
 
-```
 
 That's all Fokes! [to quote bugs bunny]
 
