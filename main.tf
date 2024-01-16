@@ -36,7 +36,7 @@ provider "azurerm" {
       purge_soft_delete_on_destroy = true
     }
   }
-  skip_provider_registration = true
+  # skip_provider_registration = true
 }
 
 resource "random_integer" "tf-ai-demo" {
