@@ -1,4 +1,4 @@
-# AKS Store Demo Using Terrafrom
+# AI Application Demo Using Terrafrom and AKS
 
 
 This sample demo app consists of a group of containerized microservices that can be easily deployed into an Azure Kubernetes Service (AKS) cluster. This is meant to show a realistic scenario using a polyglot architecture, event-driven design, and common open source back-end services (eg - RabbitMQ, MongoDB). The application also leverages OpenAI's GPT-3 models to generate product descriptions. This can be done using either [Azure OpenAI](https://learn.microsoft.com/azure/ai-services/openai/overview) or [OpenAI](https://openai.com/).
@@ -124,7 +124,29 @@ No modules.
 
 ## To Deploy
 
+1. Open a cloud Shell from the Azure portal
+2. Clone this repo by running this command:
+```
+git clone https://github.com/dawright22/azure-ai-demo.git
+```
+3. Change into the directory this created
+4. Now copy and Run this command:
+```HCL
+Terraform init
+```
+6. Now copy and Run this command:
+ ``` 
+ Terraform apply
+ ```
 
+
+That's all Fokes! [to quote bugs bunny]
+
+If you want to customise location or other componets then you can start playing with the Variables file to suit you.
+
+Terraform Outputs give you all the names of resocurces created so you can use them to connect to the resources.
+```
+in your cloud shell session.
 
 
 ## Additional Resources
