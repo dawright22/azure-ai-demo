@@ -38,7 +38,33 @@ If you plan on using Azure OpenAI service, you need to request access to enable 
 
 If you plan on using OpenAI, sign up on the OpenAI website.
 
+## To Deploy
 
+1. Open a cloud Shell from the Azure portal
+2. Clone this repo by running this command:
+```
+git clone https://github.com/dawright22/azure-ai-demo.git
+```
+3. Change into the directory this created
+4. Now copy and Run this command:
+```HCL
+Terraform init
+```
+6. Now copy and Run this command:
+ ``` 
+ Terraform apply
+ ```
+Once the deployment is complete you will see the outputs of the deployment. Then rename [ [Title](pki_build.tf.second)] to [pki_build.tf] and run terraform apply again. This will deploy the PKI components.
+
+Finally, you will need to run the following command to deploy the application: Rename [Title](app_build.tf.third) to [app_build.tf] and run terraform apply again. This will deploy the application components.
+
+```
+
+That's all Fokes! [to quote bugs bunny]
+
+If you want to customise location or other componets then you can start playing with the Variables file to suit you.
+
+Terraform Outputs give you all the names of resocurces created so you can use them to connect to the resources.
 
 ## Requirements
 
@@ -121,32 +147,6 @@ No modules.
 | <a name="output_sb_namespace_uri"></a> [sb\_namespace\_uri](#output\_sb\_namespace\_uri) | n/a |
 | <a name="output_sb_sender_key"></a> [sb\_sender\_key](#output\_sb\_sender\_key) | n/a |
 | <a name="output_sb_sender_username"></a> [sb\_sender\_username](#output\_sb\_sender\_username) | n/a |
-
-## To Deploy
-
-1. Open a cloud Shell from the Azure portal
-2. Clone this repo by running this command:
-```
-git clone https://github.com/dawright22/azure-ai-demo.git
-```
-3. Change into the directory this created
-4. Now copy and Run this command:
-```HCL
-Terraform init
-```
-6. Now copy and Run this command:
- ``` 
- Terraform apply
- ```
-
-
-That's all Fokes! [to quote bugs bunny]
-
-If you want to customise location or other componets then you can start playing with the Variables file to suit you.
-
-Terraform Outputs give you all the names of resocurces created so you can use them to connect to the resources.
-```
-in your cloud shell session.
 
 
 ## Additional Resources
