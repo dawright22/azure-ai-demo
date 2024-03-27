@@ -54,9 +54,9 @@ Terraform init
  ``` 
  Terraform apply
  ```
-Once the deployment is complete you will see the outputs of the deployment. Then rename ##[pki_build.tf.second] to [pki_build.tf] and run terraform apply again. This will deploy the PKI components.
+Once the deployment is complete you will see the outputs of the deployment. Then rename [pki_build.tf.second] to [pki_build.tf] and run terraform apply again. This will deploy the PKI components.
 
-Finally, you will need to run the following command to deploy the application: Rename ##[app_build.tf.third] to [app_build.tf] and run terraform apply again. This will deploy the application components.
+Finally, you will need to run the following command to deploy the application: Rename [app_build.tf.third] to [app_build.tf] and run terraform apply again. This will deploy the application components.
 
 
 That's all Fokes! [to quote bugs bunny]
