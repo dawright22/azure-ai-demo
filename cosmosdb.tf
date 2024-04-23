@@ -5,7 +5,7 @@ resource "azurerm_cosmosdb_account" "tf-ai-demo" {
   offer_type          = "Standard"
   kind                = "MongoDB"
 
-  enable_automatic_failover = false
+  automatic_failover_enabled = false
 
   capabilities {
     name = "EnableAggregationPipeline"
